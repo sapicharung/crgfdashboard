@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Dashboard | GFMIS vs Accrual</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Phosphor Icons for modern icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <i class="ph ph-chart-polar"></i>
+                <h2>GFMIS DASHBOARD</h2>
+            </div>
+            <nav class="nav-menu" id="nav-menu">
+                <a href="#" class="nav-item active" data-gid="0">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.เชียงแสน</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="494008632">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.เทิง</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="850576756">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.พาน</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="238921408">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.ป่าแดด</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="789881733">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.แม่จัน</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1856273744">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.แม่สาย</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1090312644">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.แม่สรวย</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1616595289">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.เวียงป่าเป้า</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="727880453">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.พญาเม็งราย</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="2011468692">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.เวียงแก่น</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="38534138">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.ขุนตาล</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1589958686">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.แม่ฟ้าหลวง</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1652919854">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.แม่ลาว</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1659444460">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.เวียงเชียงรุ้ง</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="1142319712">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.เชียงของ</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="665724095">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.สมเด็จพระญาณสังวร</span>
+                </a>
+                <a href="#" class="nav-item" data-gid="404955186">
+                    <i class="ph ph-squares-four"></i>
+                    <span>รพ.ดอยหลวง</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="dot pulse"></span>
+                    <span>System Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div>
+                    <h1>รายงานเปรียบเทียบค่าเสื่อมราคาสะสม</h1>
+                    <p class="subtitle">New GFMIS Thai vs บัญชีเกณฑ์ค้าง</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="reloadBtn" onclick="location.reload()">
+                        <i class="ph ph-arrows-clockwise"></i> อัปเดตข้อมูล
+                    </button>
+                </div>
+            </header>
+
+            <!-- Loading State -->
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+                <p>กำลังเชื่อมต่อกับ Google Sheets...</p>
+            </div>
+
+            <div id="dashboard-content" class="fade-in hidden">
+                <!-- KPI Cards -->
+                <section class="kpi-grid">
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-icon blue">
+                            <i class="ph ph-buildings"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3>รวมมูลค่า GFMIS</h3>
+                            <p id="totalGfmis" class="kpi-value">0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-icon green">
+                            <i class="ph ph-bank"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3>รวมมูลค่าเกณฑ์ค้าง</h3>
+                            <p id="totalAccrual" class="kpi-value">0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-icon orange">
+                            <i class="ph ph-scales"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3>ผลต่างรวม (สุทธิ)</h3>
+                            <p id="totalDiff" class="kpi-value">0.00</p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-icon purple">
+                            <i class="ph ph-list-numbers"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3>จำนวนรายการสินทรัพย์</h3>
+                            <p id="totalItems" class="kpi-value">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-grid">
+                    <div class="chart-card glass-panel span-2">
+                        <div class="chart-header">
+                            <h3>เปรียบเทียบมูลค่ารายหมวดสินทรัพย์</h3>
+                            <p class="text-muted">เปรียบเทียบระหว่าง GFMIS และ เกณฑ์ค้าง</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card glass-panel">
+                        <div class="chart-header">
+                            <h3>สัดส่วนผลต่าง (Discrepancy)</h3>
+                            <p class="text-muted">แยกตามหมวดสินทรัพย์ที่มีผลต่าง</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="diffChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Data Table Section -->
+                <section id="details-section" class="table-section glass-panel">
+                    <div class="table-header">
+                        <h3>รายละเอียดสินทรัพย์ทั้งหมด</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ลำดับ</th>
+                                    <th>ชื่อหมวดสินทรัพย์</th>
+                                    <th class="text-right">มูลค่า GFMIS (บาท)</th>
+                                    <th class="text-right">มูลค่าเกณฑ์ค้าง (บาท)</th>
+                                    <th class="text-right">ผลต่าง (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <!-- Data will be injected here via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Monthly Details -->
+    <div id="detailsModal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 id="modalTitle">รายละเอียดสินทรัพย์</h3>
+                <button id="closeModalBtn" class="close-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>งวด/เดือน</th>
+                                <th class="text-right">GFMIS (บาท)</th>
+                                <th class="text-right">เกณฑ์ค้าง (บาท)</th>
+                                <th class="text-right">ผลต่าง (บาท)</th>
+                                <th class="text-right">% ผลต่าง</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalTableBody">
+                            <!-- Monthly details injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=6"></script>
+</body>
+</html>
