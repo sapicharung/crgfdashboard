@@ -2,9 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     initDashboard();
     initModal();
+    
+    document.getElementById('monthFilter').addEventListener('change', (e) => {
+        currentMonth = e.target.value;
+        applyMonthFilter(currentMonth);
+    });
 });
 
+let rawDashboardData = [];
 let dashboardData = [];
+let availableMonths = [];
+let currentMonth = '';
 let chartInstances = {};
 let currentGid = '0';
 
@@ -41,7 +49,6 @@ function initDashboard() {
         complete: function(results) {
             try {
                 processData(results.data);
-                updateUI();
                 
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('dashboard-content').classList.remove('hidden');
@@ -50,7 +57,11 @@ function initDashboard() {
             }
         },
         error: function(error) {
-            showError("เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Sheets", error.message);
+            let errorMsg = error.message || error;
+            if (String(errorMsg).includes("ProgressEvent")) {
+                errorMsg = "ไม่สามารถเชื่อมต่อกับ Google Sheets ได้ (อาจเกิดจากปัญหาเครือข่าย หรือไฟล์อาจยังไม่เปิดเป็นสาธารณะ)";
+            }
+            showError("เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Sheets", errorMsg);
         }
     });
 }
@@ -91,8 +102,9 @@ function parseNumber(val) {
 }
 
 function processData(rows) {
-    dashboardData = [];
+    rawDashboardData = [];
     const groupedData = {};
+    const monthSet = new Set();
 
     rows.forEach(row => {
         const keys = Object.keys(row);
@@ -112,7 +124,7 @@ function processData(rows) {
         
         if (!groupedData[uniqueKey]) {
             groupedData[uniqueKey] = {
-                id: dashboardData.length + 1,
+                id: rawDashboardData.length + 1,
                 name: uniqueKey,
                 type: type.trim(),
                 gfmis: 0,
@@ -120,7 +132,7 @@ function processData(rows) {
                 diff: 0,
                 monthly: {}
             };
-            dashboardData.push(groupedData[uniqueKey]);
+            rawDashboardData.push(groupedData[uniqueKey]);
         }
 
         const monthKeys = keys.filter(k => k.includes('-68') || k.includes('-69') || k.match(/[ก-ฮ]\.[ก-ฮ]\.-/));
@@ -129,6 +141,7 @@ function processData(rows) {
         // Extract data for all months
         monthKeys.forEach(mKey => {
             const cleanMonth = mKey.trim();
+            monthSet.add(cleanMonth);
             if (!groupedData[uniqueKey].monthly[cleanMonth]) {
                 groupedData[uniqueKey].monthly[cleanMonth] = { gfmis: 0, accrual: 0 };
             }
@@ -139,28 +152,86 @@ function processData(rows) {
                 groupedData[uniqueKey].monthly[cleanMonth].accrual = val;
             }
         });
+    });
 
-        // Get latest month for dashboard level stats
-        let latestVal = 0;
-        for (let i = monthKeys.length - 1; i >= 0; i--) {
-            const rawVal = row[monthKeys[i]];
-            if (rawVal && rawVal.trim() !== '') {
-                latestVal = parseNumber(rawVal);
-                break;
+    availableMonths = Array.from(monthSet);
+    if (availableMonths.length > 0) {
+        if (!currentMonth || (currentMonth !== 'all' && !availableMonths.includes(currentMonth))) {
+            currentMonth = 'all';
+        }
+    }
+
+    populateMonthFilter();
+    applyMonthFilter(currentMonth);
+}
+
+function populateMonthFilter() {
+    const select = document.getElementById('monthFilter');
+    if (!select) return;
+    
+    select.innerHTML = '';
+    
+    // Add "ทั้งหมด" option
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = 'ทั้งหมด';
+    if (currentMonth === 'all') allOption.selected = true;
+    select.appendChild(allOption);
+
+    availableMonths.forEach(month => {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = month;
+        if (month === currentMonth) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+}
+
+function applyMonthFilter(month) {
+    if (!month) {
+        dashboardData = [];
+        updateUI();
+        return;
+    }
+
+    // Process rawDashboardData to create dashboardData for the selected month
+    dashboardData = [];
+    rawDashboardData.forEach(item => {
+        let gfmis = 0;
+        let accrual = 0;
+        
+        if (month === 'all') {
+            // Find the latest value available in all months for this item
+            for (let i = availableMonths.length - 1; i >= 0; i--) {
+                const m = availableMonths[i];
+                const md = item.monthly[m];
+                if (md && (md.gfmis !== 0 || md.accrual !== 0)) {
+                    gfmis = md.gfmis;
+                    accrual = md.accrual;
+                    break;
+                }
             }
-        }
-
-        if (isGfmis) {
-            groupedData[uniqueKey].gfmis = latestVal;
         } else {
-            groupedData[uniqueKey].accrual = latestVal;
+            const monthData = item.monthly[month] || { gfmis: 0, accrual: 0 };
+            gfmis = monthData.gfmis;
+            accrual = monthData.accrual;
+        }
+        
+        const newItem = {
+            ...item,
+            gfmis: gfmis,
+            accrual: accrual,
+            diff: gfmis - accrual
+        };
+        
+        if (newItem.gfmis !== 0 || newItem.accrual !== 0 || newItem.diff !== 0) {
+            dashboardData.push(newItem);
         }
     });
 
-    dashboardData = dashboardData.filter(item => {
-        item.diff = item.gfmis - item.accrual;
-        return (item.gfmis !== 0 || item.accrual !== 0 || item.diff !== 0);
-    });
+    updateUI();
 }
 
 function updateUI() {
@@ -172,9 +243,31 @@ function updateUI() {
     document.getElementById('totalAccrual').innerText = formatCurrency(totalAccrual);
     
     const diffEl = document.getElementById('totalDiff');
+    const diffPctEl = document.getElementById('totalDiffPct');
     diffEl.innerText = formatCurrency(totalDiff);
-    if (totalDiff > 0) diffEl.style.color = 'var(--accent-green)';
-    else if (totalDiff < 0) diffEl.style.color = 'var(--accent-red)';
+    
+    let totalPct = 0;
+    if (totalGfmis !== 0) {
+        totalPct = (totalDiff / totalGfmis) * 100;
+    } else if (totalDiff !== 0) {
+        totalPct = 100;
+    }
+    
+    let pctSign = totalPct > 0 ? '+' : '';
+    if (diffPctEl) {
+        diffPctEl.innerText = `${pctSign}${formatCurrency(totalPct)}%`;
+    }
+    
+    if (totalDiff > 0) {
+        diffEl.style.color = 'var(--accent-green)';
+        if (diffPctEl) diffPctEl.style.color = 'var(--accent-green)';
+    } else if (totalDiff < 0) {
+        diffEl.style.color = 'var(--accent-red)';
+        if (diffPctEl) diffPctEl.style.color = 'var(--accent-red)';
+    } else {
+        diffEl.style.color = '';
+        if (diffPctEl) diffPctEl.style.color = 'var(--text-muted)';
+    }
     
     document.getElementById('totalItems').innerText = dashboardData.length.toLocaleString();
     
@@ -193,6 +286,14 @@ function renderTable() {
         if (item.diff > 0) diffClass = 'val-positive';
         else if (item.diff < 0) diffClass = 'val-negative';
         
+        let pct = 0;
+        if (item.gfmis !== 0) {
+            pct = (item.diff / item.gfmis) * 100;
+        } else if (item.diff !== 0) {
+            pct = 100;
+        }
+        let pctSign = pct > 0 ? '+' : '';
+        
         tr.innerHTML = `
             <td>${index + 1}</td>
             <td>
@@ -202,6 +303,7 @@ function renderTable() {
             <td class="text-right">${formatCurrency(item.gfmis)}</td>
             <td class="text-right">${formatCurrency(item.accrual)}</td>
             <td class="text-right ${diffClass}">${formatCurrency(item.diff)}</td>
+            <td class="text-right ${diffClass}">${pctSign}${formatCurrency(pct)}%</td>
         `;
         tbody.appendChild(tr);
     });
@@ -268,11 +370,11 @@ function renderCharts() {
     const colorText = '#94a3b8';
     const colorGrid = 'rgba(255, 255, 255, 0.05)';
     
-    const chartData = [...dashboardData]
-        .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+    const topValueData = [...dashboardData]
+        .sort((a, b) => Math.max(b.gfmis, b.accrual) - Math.max(a.gfmis, a.accrual))
         .slice(0, 10);
         
-    const labels = chartData.map(d => d.name);
+    const labels = topValueData.map(d => d.name);
     
     const ctxComp = document.getElementById('comparisonChart').getContext('2d');
     if (chartInstances.comparison) chartInstances.comparison.destroy();
@@ -284,13 +386,13 @@ function renderCharts() {
             datasets: [
                 {
                     label: 'GFMIS',
-                    data: chartData.map(d => d.gfmis),
+                    data: topValueData.map(d => d.gfmis),
                     backgroundColor: colorGfmis,
                     borderRadius: 4
                 },
                 {
                     label: 'บัญชีเกณฑ์ค้าง',
-                    data: chartData.map(d => d.accrual),
+                    data: topValueData.map(d => d.accrual),
                     backgroundColor: colorAccrual,
                     borderRadius: 4
                 }
@@ -318,7 +420,11 @@ function renderCharts() {
     const ctxDiff = document.getElementById('diffChart').getContext('2d');
     if (chartInstances.diff) chartInstances.diff.destroy();
     
-    const diffData = chartData.filter(d => Math.abs(d.diff) > 0);
+    const topDiffData = [...dashboardData]
+        .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+        .slice(0, 10);
+        
+    const diffData = topDiffData.filter(d => Math.abs(d.diff) > 0);
     const diffLabels = diffData.map(d => d.name);
     const diffValues = diffData.map(d => Math.abs(d.diff));
     

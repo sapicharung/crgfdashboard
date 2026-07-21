@@ -29,7 +29,7 @@
         <aside class="sidebar glass-panel">
             <div class="logo">
                 <i class="ph ph-chart-polar"></i>
-                <h2>GFMIS DASHBOARD</h2>
+                <h2>ASSET DASHBOARD</h2>
             </div>
             <nav class="nav-menu" id="nav-menu">
                 <a href="#" class="nav-item active" data-gid="0">
@@ -113,10 +113,11 @@
         <main class="main-content">
             <header class="top-header">
                 <div>
-                    <h1>รายงานเปรียบเทียบค่าเสื่อมราคาสะสม</h1>
+                    <h1>รายงานเปรียบเทียบผลต่างทรัพย์สินถาวร</h1>
                     <p class="subtitle">New GFMIS Thai vs บัญชีเกณฑ์ค้าง</p>
                 </div>
-                <div class="header-actions">
+                <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                    <select id="monthFilter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.8); color: white; font-family: 'Prompt', sans-serif; outline: none; cursor: pointer;"></select>
                     <button class="btn-primary" id="reloadBtn" onclick="location.reload()">
                         <i class="ph ph-arrows-clockwise"></i> อัปเดตข้อมูล
                     </button>
@@ -157,7 +158,10 @@
                             <i class="ph ph-scales"></i>
                         </div>
                         <div class="kpi-info">
-                            <h3>ผลต่างรวม (สุทธิ)</h3>
+                            <h3 style="display: flex; align-items: center; gap: 8px;">
+                                ผลต่างรวม
+                                <span id="totalDiffPct" style="font-size: 13px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(255,255,255,0.05);"></span>
+                            </h3>
                             <p id="totalDiff" class="kpi-value">0.00</p>
                         </div>
                     </div>
@@ -177,7 +181,7 @@
                 <section class="charts-grid">
                     <div class="chart-card glass-panel span-2">
                         <div class="chart-header">
-                            <h3>เปรียบเทียบมูลค่ารายหมวดสินทรัพย์</h3>
+                            <h3>เปรียบเทียบมูลค่ารายหมวดสินทรัพย์ 10 อันดับสูงสุด</h3>
                             <p class="text-muted">เปรียบเทียบระหว่าง GFMIS และ เกณฑ์ค้าง</p>
                         </div>
                         <div class="chart-container">
@@ -210,6 +214,7 @@
                                     <th class="text-right">มูลค่า GFMIS (บาท)</th>
                                     <th class="text-right">มูลค่าเกณฑ์ค้าง (บาท)</th>
                                     <th class="text-right">ผลต่าง (บาท)</th>
+                                    <th class="text-right">% ผลต่าง</th>
                                 </tr>
                             </thead>
                             <tbody id="dataTableBody">
