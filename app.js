@@ -398,16 +398,33 @@ function renderCharts() {
                 }
             ]
         },
+        plugins: [ChartDataLabels],
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 20
+                }
+            },
             plugins: {
-                legend: { labels: { color: colorText, font: { family: 'Outfit' } } }
+                legend: { labels: { color: colorText, font: { family: 'Outfit' } } },
+                datalabels: {
+                    color: colorText,
+                    anchor: 'end',
+                    align: 'top',
+                    font: { family: 'Prompt', size: 10, weight: 500 },
+                    formatter: function(value, context) {
+                        if (value === 0) return '';
+                        return formatCurrencyCompact(value);
+                    }
+                }
             },
             scales: {
                 y: { 
                     grid: { color: colorGrid },
-                    ticks: { color: colorText, callback: function(value) { return formatCurrencyCompact(value); } }
+                    ticks: { color: colorText, callback: function(value) { return formatCurrencyCompact(value); } },
+                    suggestedMax: Math.max(...topValueData.map(d => Math.max(d.gfmis, d.accrual))) * 1.15
                 },
                 x: {
                     grid: { display: false },
@@ -471,8 +488,16 @@ function renderCharts() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const raw = diffData[context.dataIndex].diff;
-                            return ' ผลต่าง: ' + formatCurrency(raw) + ' บาท';
+                            const item = diffData[context.dataIndex];
+                            const raw = item.diff;
+                            let pct = 0;
+                            if (item.gfmis !== 0) {
+                                pct = (item.diff / item.gfmis) * 100;
+                            } else if (item.diff !== 0) {
+                                pct = 100;
+                            }
+                            const sign = pct > 0 ? '+' : '';
+                            return ` ผลต่าง: ${formatCurrency(raw)} บาท (${sign}${formatCurrency(pct)}%)`;
                         }
                     }
                 }

@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset Dashboard | GFMIS vs Accrual</title>
-     
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- PapaParse for CSV parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    
+
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     <!-- Phosphor Icons for modern icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="dashboard-container">
-        
+
         <!-- Sidebar -->
         <aside class="sidebar glass-panel">
             <div class="logo">
@@ -117,7 +122,8 @@
                     <p class="subtitle">New GFMIS Thai vs บัญชีเกณฑ์ค้าง</p>
                 </div>
                 <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
-                    <select id="monthFilter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.8); color: white; font-family: 'Prompt', sans-serif; outline: none; cursor: pointer;"></select>
+                    <select id="monthFilter"
+                        style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.8); color: white; font-family: 'Prompt', sans-serif; outline: none; cursor: pointer;"></select>
                     <button class="btn-primary" id="reloadBtn" onclick="location.reload()">
                         <i class="ph ph-arrows-clockwise"></i> อัปเดตข้อมูล
                     </button>
@@ -142,7 +148,7 @@
                             <p id="totalGfmis" class="kpi-value">0.00</p>
                         </div>
                     </div>
-                    
+
                     <div class="kpi-card glass-panel">
                         <div class="kpi-icon green">
                             <i class="ph ph-bank"></i>
@@ -152,7 +158,7 @@
                             <p id="totalAccrual" class="kpi-value">0.00</p>
                         </div>
                     </div>
-                    
+
                     <div class="kpi-card glass-panel">
                         <div class="kpi-icon orange">
                             <i class="ph ph-scales"></i>
@@ -160,7 +166,8 @@
                         <div class="kpi-info">
                             <h3 style="display: flex; align-items: center; gap: 8px;">
                                 ผลต่างรวม
-                                <span id="totalDiffPct" style="font-size: 13px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(255,255,255,0.05);"></span>
+                                <span id="totalDiffPct"
+                                    style="font-size: 13px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(255,255,255,0.05);"></span>
                             </h3>
                             <p id="totalDiff" class="kpi-value">0.00</p>
                         </div>
@@ -181,17 +188,17 @@
                 <section class="charts-grid">
                     <div class="chart-card glass-panel span-2">
                         <div class="chart-header">
-                            <h3>เปรียบเทียบมูลค่ารายหมวดสินทรัพย์ 10 อันดับสูงสุด</h3>
+                            <h3>เปรียบเทียบมูลค่ารายหมวดสินทรัพย์ 10อันดับ</h3>
                             <p class="text-muted">เปรียบเทียบระหว่าง GFMIS และ เกณฑ์ค้าง</p>
                         </div>
                         <div class="chart-container">
                             <canvas id="comparisonChart"></canvas>
                         </div>
                     </div>
-                    
+
                     <div class="chart-card glass-panel">
                         <div class="chart-header">
-                            <h3>สัดส่วนผลต่าง (Discrepancy)</h3>
+                            <h3>สัดส่วนผลต่าง 10อันดับ</h3>
                             <p class="text-muted">แยกตามหมวดสินทรัพย์ที่มีผลต่าง</p>
                         </div>
                         <div class="chart-container">
@@ -257,4 +264,5 @@
 
     <script src="app.js?v=6"></script>
 </body>
+
 </html>
